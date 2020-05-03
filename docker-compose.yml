@@ -45,8 +45,6 @@ services:
   rosgrant-identity:
     image: levnikolaevich/rosgrantidentity:latest
     container_name: rosgrant-identity
-    ports:
-        - 5001:80
     volumes:
         - uploaded-files:/var/uploaded_file
     environment:
@@ -59,8 +57,6 @@ services:
   rosgrant-mvc:
     image: levnikolaevich/rosgrantmvc:latest
     container_name: rosgrant-mvc
-    ports:
-        - 5002:80
     volumes:
         - uploaded-files:/var/uploaded_file
     environment:
@@ -74,8 +70,6 @@ services:
   rosgrant-user:
         image: levnikolaevich/rosgrantuser:latest
         container_name: rosgrant-user
-        ports:
-            - 5003:80
         volumes:
             - uploaded-files:/var/uploaded_file
         environment:
@@ -86,6 +80,16 @@ services:
             - rosgrant-rabbit
             - rosgrant-identity    
         restart: always
+  rosgrant-proxy:
+    image: levnikolaevich/rosgrantproxy:latest
+    container_name: rosgrant-proxy
+    ports:
+        - 80:80
+    environment:
+        ASPNETCORE_ENVIRONMENT: DockerTest
+    depends_on:
+        - rosgrant-identity
+    restart: always      
 
 volumes:
     rabbitmq-schema: 
