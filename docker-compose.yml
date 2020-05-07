@@ -46,7 +46,7 @@ services:
     image: levnikolaevich/rosgrantidentity:latest
     container_name: rosgrant-identity
     volumes:
-        - uploaded-files:/var/uploaded_file
+        - uploaded-files:/var/uploaded_files
     environment:
         ASPNETCORE_ENVIRONMENT: DockerTest
     depends_on:
@@ -58,7 +58,7 @@ services:
     image: levnikolaevich/rosgrantmvc:latest
     container_name: rosgrant-mvc
     volumes:
-        - uploaded-files:/var/uploaded_file
+       - uploaded-files:/var/uploaded_files
     environment:
         ASPNETCORE_ENVIRONMENT: DockerTest
     depends_on:
@@ -71,7 +71,7 @@ services:
         image: levnikolaevich/rosgrantuser:latest
         container_name: rosgrant-user
         volumes:
-            - uploaded-files:/var/uploaded_file
+            - uploaded-files:/var/uploaded_files
         environment:
             ASPNETCORE_ENVIRONMENT: DockerTest
         depends_on:
@@ -80,6 +80,32 @@ services:
             - rosgrant-rabbit
             - rosgrant-identity    
         restart: always
+  rosgrant-emailtemplate:
+        image: levnikolaevich/rosgrantemailtemplate:latest
+        container_name: rosgrant-emailtemplate
+        volumes:
+            - uploaded-files:/var/uploaded_files
+        environment:
+            ASPNETCORE_ENVIRONMENT: DockerTest
+        depends_on:
+            - rosgrant-mssql
+            - rosgrant-redis
+            - rosgrant-rabbit
+            - rosgrant-identity    
+        restart: always 
+  rosgrant-application:
+        image: levnikolaevich/rosgrantapplication:latest
+        container_name: rosgrant-application
+        volumes:
+            - uploaded-files:/var/uploaded_files
+        environment:
+            ASPNETCORE_ENVIRONMENT: DockerTest
+        depends_on:
+            - rosgrant-mssql
+            - rosgrant-redis
+            - rosgrant-rabbit
+            - rosgrant-identity    
+        restart: always        
   rosgrant-proxy:
     image: levnikolaevich/rosgrantproxy:latest
     container_name: rosgrant-proxy
