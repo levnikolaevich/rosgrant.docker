@@ -17,7 +17,7 @@ services:
 
   rosgrant-mssql:
     image: mcr.microsoft.com/mssql/server:2019-latest
-    container_name: rosgrant-sql
+    container_name: rosgrant-mssql
     networks:
         - rosgrant
     ports:
@@ -25,9 +25,9 @@ services:
     volumes:
         - mssql-data:/var/opt/mssql
     environment:
-        ACCEPT_EULA: Y
-        SA_PASSWORD: myStrongPass2020
-        TZ: Europe/Moscow
+        - ACCEPT_EULA=Y
+        - SA_PASSWORD=myStrongPass2020
+        - TZ=Europe/Moscow
     restart: always
 
   rosgrant-redis:
