@@ -5,15 +5,21 @@ services:
   rosgrant-elasticsearch:
     image: elasticsearch:5.6.8-alpine
     container_name: rosgrant-elasticsearch
+    networks:
+        - rosgrant
     ports:
         - 9200:9200
         - 9300:9300
     environment:
         - discovery.type=single-node
+        - TZ=Europe/Moscow
     restart: always
+
   rosgrant-mssql:
     image: mcr.microsoft.com/mssql/server:2019-latest
     container_name: rosgrant-sql
+    networks:
+        - rosgrant
     ports:
         - 1433:1433
     volumes:
@@ -21,18 +27,27 @@ services:
     environment:
         ACCEPT_EULA: Y
         SA_PASSWORD: myStrongPass2020
+        TZ: Europe/Moscow
     restart: always
+
   rosgrant-redis:
     image: redis:3.2.10
     container_name: rosgrant-redis
+    networks:
+        - rosgrant
     ports:
         - 6379:6379
     volumes:
         - redis-data:/data
+    environment:
+        - TZ=Europe/Moscow
     restart: always
+
   rosgrant-rabbit:
     image: rabbitmq:management
     container_name: rosgrant-rabbitmq
+    networks:
+        - rosgrant
     ports:
         - 15672:15672
         - 5672:5672
@@ -40,82 +55,120 @@ services:
     volumes:
         - rabbitmq-schema:/var/lib/rabbitmq/schema 
         - rabbitmq-mnesia:/var/lib/rabbitmq/mnesia 
-        - rabbitmq-config:/var/lib/rabbitmq/config 
+        - rabbitmq-config:/var/lib/rabbitmq/config
+    environment:
+        - TZ=Europe/Moscow
     restart: always
+
   rosgrant-identity:
     image: levnikolaevich/rosgrantidentity:latest
     container_name: rosgrant-identity
+    networks:
+        - rosgrant
     volumes:
         - uploaded-files:/var/uploaded_files
     environment:
         ASPNETCORE_ENVIRONMENT: DockerTest
+        TZ: Europe/Moscow
     depends_on:
         - rosgrant-mssql
         - rosgrant-redis
         - rosgrant-rabbit    
     restart: always
+
   rosgrant-mvc:
     image: levnikolaevich/rosgrantmvc:latest
     container_name: rosgrant-mvc
+    networks:
+        - rosgrant
     volumes:
-       - uploaded-files:/var/uploaded_files
+        - uploaded-files:/var/uploaded_files
+#        - type: bind
+#          source: C:\MVC-UploadedFile
+#          target: /var/uploaded_files
     environment:
         ASPNETCORE_ENVIRONMENT: DockerTest
+        TZ: Europe/Moscow
     depends_on:
         - rosgrant-mssql
         - rosgrant-redis
         - rosgrant-rabbit
         - rosgrant-identity    
     restart: always
+
   rosgrant-user:
-        image: levnikolaevich/rosgrantuser:latest
-        container_name: rosgrant-user
-        volumes:
-            - uploaded-files:/var/uploaded_files
-        environment:
-            ASPNETCORE_ENVIRONMENT: DockerTest
-        depends_on:
-            - rosgrant-mssql
-            - rosgrant-redis
-            - rosgrant-rabbit
-            - rosgrant-identity    
-        restart: always
-  rosgrant-emailtemplate:
-        image: levnikolaevich/rosgrantemailtemplate:latest
-        container_name: rosgrant-emailtemplate
-        volumes:
-            - uploaded-files:/var/uploaded_files
-        environment:
-            ASPNETCORE_ENVIRONMENT: DockerTest
-        depends_on:
-            - rosgrant-mssql
-            - rosgrant-redis
-            - rosgrant-rabbit
-            - rosgrant-identity    
-        restart: always 
-  rosgrant-application:
-        image: levnikolaevich/rosgrantapplication:latest
-        container_name: rosgrant-application
-        volumes:
-            - uploaded-files:/var/uploaded_files
-        environment:
-            ASPNETCORE_ENVIRONMENT: DockerTest
-        depends_on:
-            - rosgrant-mssql
-            - rosgrant-redis
-            - rosgrant-rabbit
-            - rosgrant-identity    
-        restart: always        
-  rosgrant-proxy:
-    image: levnikolaevich/rosgrantproxy:latest
-    container_name: rosgrant-proxy
-    ports:
-        - 80:80
+    image: levnikolaevich/rosgrantuser:latest
+    container_name: rosgrant-user
+    networks:
+        - rosgrant
+    volumes:
+        - uploaded-files:/var/uploaded_files
     environment:
         ASPNETCORE_ENVIRONMENT: DockerTest
+        TZ: Europe/Moscow
     depends_on:
+        - rosgrant-mssql
+        - rosgrant-redis
+        - rosgrant-rabbit
+        - rosgrant-identity    
+    restart: always
+
+  rosgrant-emailtemplate:
+    image: levnikolaevich/rosgrantemailtemplate:latest
+    container_name: rosgrant-emailtemplate
+    networks:
+        - rosgrant
+    volumes:
+        - uploaded-files:/var/uploaded_files
+    environment:
+        ASPNETCORE_ENVIRONMENT: DockerTest
+        TZ: Europe/Moscow
+    depends_on:
+        - rosgrant-mssql
+        - rosgrant-redis
+        - rosgrant-rabbit
+        - rosgrant-identity    
+    restart: always 
+
+  rosgrant-application:
+    image: levnikolaevich/rosgrantapplication:latest
+    container_name: rosgrant-application
+    networks:
+        - rosgrant
+    volumes:
+        - uploaded-files:/var/uploaded_files
+    environment:
+        ASPNETCORE_ENVIRONMENT: DockerTest
+        TZ: Europe/Moscow
+    depends_on:
+        - rosgrant-mssql
+        - rosgrant-redis
+        - rosgrant-rabbit
+        - rosgrant-identity    
+    restart: always        
+
+  nginx:
+    image: levnikolaevich/nginx-rosgrant:v1
+    container_name: rosgrant-nginx
+    networks:
+        - rosgrant
+    ports:
+        - 80:80
+    volumes:
+        - nginx-logs:/var/log/nginx
+    environment:
+        - TZ=Europe/Moscow
+    depends_on:
+        - rosgrant-mvc
         - rosgrant-identity
-    restart: always      
+        - rosgrant-user
+        - rosgrant-application
+        - rosgrant-emailtemplate
+    restart: always
+
+
+networks:
+    rosgrant:
 
 volumes:
     rabbitmq-schema: 
@@ -124,3 +177,4 @@ volumes:
     mssql-data:
     redis-data:
     uploaded-files:        
+    nginx-logs:
